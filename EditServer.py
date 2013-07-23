@@ -1,7 +1,15 @@
-#!/usr/local/bin/python
-#$Id: EditServer.py,v 1.2 1995/12/27 04:05:31 connolly Exp $
+"""
+A minimal edit server to run Ometa for JavaScript locally,
+extracted from http://www.w3.org/Tools/pyserver/EditServer.py
 
-import os,string, stat, time
+To use:
+$ git clone git@github.com:alexwarth/ometa-js.git
+$ cd ometa-js
+$ git clone git@github.com:namin/ometa-js-projects.git projects
+$ python projects/EditServer.py
+"""
+
+import os, string, stat, time
 
 import SimpleHTTPServer
 import SocketServer
@@ -9,23 +17,16 @@ import SocketServer
 Handler = SimpleHTTPServer.SimpleHTTPRequestHandler
 
 class RootedHandler(Handler):
-    # Hides URL space in local file system
-    # Adds "Welcome" files, or index files
-    # Restricts access to specified domains
+    index_files = ['index.html']
 
-    authorized_domains = ["w3.org", "lcs.mit.edu", "jumpnet.com", "207.8.37"]
+    root = os.getcwd()
 
-    index_files = ['Overview.html', 'index.html']
-
-    root = '/afs/w3.org'
-
-    server_version = "EditHTTP-connolly/0.1"
+    server_version = "EditHTTP-ometa-js/0.1"
 
 
     def do_GET(self):
 	"""Serve a GET request."""
 
-	if not self.check_auth('GET'): return
 	try:
 	    self.get()
 	except HTTPError:
@@ -57,7 +58,6 @@ class RootedHandler(Handler):
     def do_HEAD(self):
 	"""Serve a HEAD request."""
 
-	if not self.check_auth('HEAD'): return
 	try:
 	    self.head()
 	except HTTPError:
@@ -111,32 +111,9 @@ class RootedHandler(Handler):
 
 	return path
 
-    def check_auth(self, method, path='/'):
-	c = self.address_string() # get hostname of client
-	for d in self.authorized_domains:
-	    if c[-len(d):] == d or c[:len(d)] == d:
-		return 1
-
-	self.send_error(403, "Host %s unauthorized" % c)
-	return 0
-
-
-class ProxyHandler(RootedHandler):
-	# Handles proxy requests by serving local files.
-
-	proxy_for = ["http://www.w3.org"]
-
-	def translate_path(self, path, find_welcome=1):
-		for p in self.proxy_for:
-			if path[:len(p)] == p:
-				path = path[len(p):]
-		return RootedHandler.translate_path(self, path, find_welcome)
-
-
-
 HTTPError = 'EditServer.HTTPError'
 
-class EditRequestHandler(ProxyHandler):
+class EditRequestHandler(RootedHandler):
 
     def content_length(self):
 	l = self.headers.getheader('content-length')
@@ -148,7 +125,6 @@ class EditRequestHandler(ProxyHandler):
 	raise HTTPError, (400, "Bad Content-Length: " + `l`)
 
     def do_PUT(self):
-	if not self.check_auth('PUT'): return ## change to exception
 	try:
 	    self.put()
 	except HTTPError:
