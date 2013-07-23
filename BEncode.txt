@@ -1,0 +1,33 @@
+ometa BaseUtils <: Parser {
+    digit    = ^digit:d                 -> d.digitValue(),
+
+    number   = number:n digit:d         -> (n * 10 + d)
+             | digit,
+
+    repeat :rule 1 = apply(rule):r -> r,
+    repeat :rule :n ?(n > 1) = apply(rule):r1 repeat(rule, n-1):rr -> (r1 + rr),
+
+    stringn :len = repeat('char', len):s   -> s
+}
+ometa BEncodeParser <: BaseUtils {
+
+    be_value = (be_number | be_string | be_list | be_dict):x -> x,
+    be_number = 'i' number:n 'e'          -> n,
+    be_string = number:len ':' stringn(len):s -> s,
+    be_list = 'l' (be_value+):cs 'e' -> cs,
+    be_dict_entry = be_string:k be_value:v -> {'key': k, 'value': v},
+    be_dict = 'd' (be_dict_entry+):ds 'e' -> entries2dict(ds)
+}
+
+function entries2dict(ds) {
+    var o = {}
+    for(var i=0; i<ds.length; i++) {
+        o[ds[i].key] = ds[i].value
+    }
+    return o
+}
+
+//BEncodeParser.matchAll("4:1234", 'be_string');
+//BEncodeParser.matchAll("l4:1234i13ee", 'be_list');
+//BEncodeParser.matchAll("ll4:1234i13eee", 'be_list');
+//x = BEncodeParser.matchAll("d4:spami12e5:hello5:worlde", 'be_dict');
