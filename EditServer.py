@@ -111,7 +111,8 @@ class RootedHandler(Handler):
 
 	return path
 
-HTTPError = 'EditServer.HTTPError'
+class HTTPError(Exception):
+    pass
 
 class EditRequestHandler(RootedHandler):
 
