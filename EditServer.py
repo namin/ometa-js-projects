@@ -6,6 +6,7 @@ To use:
 $ git clone git@github.com:alexwarth/ometa-js.git
 $ cd ometa-js
 $ git clone git@github.com:namin/ometa-js-projects.git projects
+$ cp *txt projects/
 $ python projects/EditServer.py
 """
 
